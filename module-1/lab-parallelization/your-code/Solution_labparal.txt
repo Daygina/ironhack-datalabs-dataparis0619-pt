@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+import requests
+
+url = 'https://en.wikipedia.org/wiki/Data_science'
+html=requests.get(url).content
+
+
+# ## Step 2: Use BeautifulSoup to extract a list of all the unique links on the page.
+
+from bs4 import BeautifulSoup
+soup=BeautifulSoup(html, "lxml")
+hrefs= [tag_a.get('href') for tag_a in soup.find_all('a')]
+#links=set(hrefs)
+hrefs
+len(hrefs)
+
+hrefs.remove(None)
+#ltest = [1, 2] remove the object in the list. Remove method removes the element but does not return an object, it returns NoneType
+#ltest.remove(1) 
+
+type(hrefs)
+
+hrefs = [x for x in hrefs if "%" and "#" not in x]
+#je garde que les elements sans le % et #
+
+hrefs
+
+#example of remove method again
+l = ['https://uk.wikipedia.org/wiki/%D0%9D%D0%B0%D1%83%D0%BA%D0%B0_%D0%BF%D1%80%D0%BE_%D0%B4%D0%B0%D0%BD%D1%96']
+l.remove('https://uk.wikipedia.org/wiki/%D0%9D%D0%B0%D1%83%D0%BA%D0%B0_%D0%BF%D1%80%D0%BE_%D0%B4%D0%B0%D0%BD%D1%96')
+
+
+# ## Step 3: Use list comprehensions with conditions to clean the link list.
+# 
+# There are two types of links, absolute and relative. Absolute links have the full URL and begin with http while relative links begin with a forward slash (/) and point to an internal page within the wikipedia.org domain. Clean the respective types of URLs as follows.
+# 
+# - Absolute Links: Create a list of these and remove any that contain a percentage sign (%).
+# - Relativel Links: Create a list of these, add the domain to the link so that you have the full URL, and remove any that contain a percentage sign (%).
+# - Combine the list of absolute and relative links and ensure there are no duplicates.
+
+domain = 'http://wikipedia.org'
+
+listurlhash=[x for x in hrefs if str(x).startswith("http")]
+listurlhash
+# all the absolute links
+
+wiki=[domain+x for x in hrefs if str(x).startswith('/wiki')]
+wiki
+# all the relative links with domain added
+
+final=wiki+listurlhash
+final
+len(final)
+
+
+uniqueurl_set=set(final)
+len(uniqueurl_set)
+uniqueurl_set
+
+
+# ## Step 4: Use the os library to create a folder called *wikipedia* and make that the current working directory.
+import os
+print("Current Working Directory " , os.getcwd())
+path = "..\wikipedia"
+
+try:
+    os.mkdir(path)
+except OSError:
+    print ("Creation of the directory %s failed" % path)
+else:
+    print ("Successfully created the directory %s " % path)
+
+os.chdir(path)
+os.getcwd()
+
+
+# ## Step 5: Write a function called index_page that accepts a link and does the following.
+# 
+# - Tries to request the content of the page referenced by that link.
+# - Slugifies the filename using the `slugify` function from the [python-slugify](https://pypi.org/project/python-slugify/) library and adds a .html file extension.
+#     - If you don't already have the python-slugify library installed, you can pip install it as follows: `$ pip install python-slugify`.
+#     - To import the slugify function, you would do the following: `from slugify import slugify`.
+#     - You can then slugify a link as follows `slugify(link)`.
+# - Creates a file in the wikipedia folder using the slugified filename and writes the contents of the page to the file.
+# - If an exception occurs during the process above, just `pass`.
+
+from slugify import slugify
+
+def index_page(link):
+
+    filename = slugify(link) + '.html'
+    request=requests.get(link).content
+        
+    with open(filename, 'wb') as filehandle:
+        filehandle.write(request)
+    #return file_object
+
+import multiprocessing
+
+if __name__ == 'main':
+    pool = multiprocessing.Pool()
+    result = pool.map(index_page, uniqueurl_set)
+    pool.terminate()
+    pool.join()
+
+
+
+
+
+
